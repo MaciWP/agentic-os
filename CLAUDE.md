@@ -3,6 +3,7 @@
 Local, single-user cockpit: Jira tickets, GitHub PRs, Markdown notes, saved
 prompts, agent terminals and read-only consultations. Stack and reasons:
 [docs/adr/0001-stack.md](docs/adr/0001-stack.md).
+Private local context, when present: docs/private/context/user-profile.md.
 
 ## Commands
 

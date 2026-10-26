@@ -734,7 +734,8 @@ export function MesaTabs({
     >
       {bar}
       <div className="relative flex min-h-0 flex-1">
-        {rail({ body, count: views.length, waits: loudMesas })}
+        {/* Below md there is no rail: not mounted, or its sources fetch for nobody. */}
+        {!narrow && rail({ body, count: views.length, waits: loudMesas })}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           {(narrow || !listShown) && (
             <div className="flex min-h-11 shrink-0 items-center gap-1 border-line border-b bg-panel px-2 md:min-h-9">

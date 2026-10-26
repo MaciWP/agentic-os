@@ -255,6 +255,9 @@ test("a phone reads an agent's conversation as Markdown and answers its question
       pc.locator(`section[data-terminal-id="${id}"]`).getByText("Abierta en otra ventana."),
     ).toHaveCount(0);
   } finally {
+    // Stopping the terminal makes the page read the list again while the test closes it: the
+    // fixture's fetch would end with no body.
+    await page.unrouteAll({ behavior: "ignoreErrors" });
     await desktop.close();
     await request.post(`/api/terminals/${id}/stop`, { headers });
   }

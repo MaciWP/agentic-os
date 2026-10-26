@@ -14,3 +14,7 @@ dist.next/
 dist.prev/
 dist.lock/
 *.bun-build
+
+# Private, local only: agent plans and work context never leave this machine.
+.claude/
+docs/private/
