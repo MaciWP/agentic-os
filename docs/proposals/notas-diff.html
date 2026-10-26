@@ -1,0 +1,644 @@
+<title>Notas en el diff</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single reading column; the hero is a working replica of two Mesa tiles side by side. Dark only, like the app. */
+:root {
+  --bg: oklch(0.16 0.006 270);
+  --panel: oklch(0.2 0.007 270);
+  --hover: oklch(0.235 0.008 270);
+  --selected: oklch(0.27 0.03 275);
+  --ink: oklch(0.94 0.004 270);
+  --ink-2: oklch(0.68 0.01 270);
+  --line: oklch(0.28 0.008 270);
+  --accent: oklch(0.7 0.15 275);
+  --on-accent: oklch(0.16 0.006 270);
+  --ok: oklch(0.72 0.14 155);
+  --warn: oklch(0.8 0.13 75);
+  --bad: oklch(0.7 0.17 25);
+  --h-claude: oklch(0.62 0.15 45);
+  --h-codex: oklch(0.62 0.12 170);
+  --h-grok: oklch(0.62 0.14 245);
+  --h-git: oklch(0.62 0.12 95);
+  --term-bg: #17171c;
+  --term-header: #1c1c22;
+  --term-bar: #22222a;
+  --term-ink: #e4e4ea;
+  --term-you: #2a2440;
+  --note: oklch(0.8 0.13 75);
+  --note-bg: oklch(0.3 0.05 75 / 0.35);
+  --font-ui: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --radius: 6px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 15px; line-height: 1.55;
+  padding-block: 40px 80px; padding-inline: 16px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 64px; }
+.prose { max-width: 68ch; }
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 24px; font-weight: 600; letter-spacing: -0.01em; }
+h3 { font-size: 15px; font-weight: 600; }
+p { margin: 0; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.lead { color: var(--ink-2); font-size: 17px; margin-top: 12px; }
+.stack { display: grid; gap: 16px; }
+code, .mono { font-family: var(--font-mono); font-size: 0.92em; }
+code { background: var(--hover); padding: 1px 5px; border-radius: 4px; }
+.muted { color: var(--ink-2); }
+
+/* ---------- Mesa replica ---------- */
+.mesa { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 10px; }
+@media (max-width: 900px) { .mesa { grid-template-columns: minmax(0, 1fr); } }
+.tile { background: var(--term-bg); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; min-width: 0; box-shadow: 0 1px 2px oklch(0 0 0 / .3), 0 6px 18px oklch(0 0 0 / .35); }
+.tile-head { display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: var(--term-header); border-bottom: 1px solid var(--line); font-size: 12.5px; min-width: 0; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.tile-head .name { font-weight: 600; white-space: nowrap; }
+.tile-head .where { color: var(--ink-2); font-family: var(--font-mono); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.tile-head .spacer { flex: 1; }
+.chip { font-family: var(--font-mono); font-size: 11px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-2); white-space: nowrap; }
+.chip.working { color: var(--ok); border-color: color-mix(in oklch, var(--ok) 40%, transparent); }
+.chip.new { color: var(--note); border-color: color-mix(in oklch, var(--note) 45%, transparent); }
+
+.file-bar { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--term-bar); font-family: var(--font-mono); font-size: 12px; border-bottom: 1px solid var(--line); }
+.file-bar .add { color: var(--ok); } .file-bar .del { color: var(--bad); }
+
+.diff { overflow-x: auto; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.7; }
+.diff-grid { display: grid; grid-template-columns: 40px 40px 18px minmax(max-content, 1fr); min-width: 100%; }
+.hunk { grid-column: 1 / -1; background: var(--hover); color: var(--accent); padding: 1px 10px; border-block: 1px solid color-mix(in oklch, var(--line) 60%, transparent); }
+.g { color: var(--ink-2); text-align: right; padding-right: 8px; user-select: none; opacity: .75; }
+.g.click { cursor: pointer; position: relative; opacity: 1; }
+.g.click:hover, .g.click:focus-visible { color: var(--note); background: var(--note-bg); outline: none; }
+.g.click:hover::before, .g.click:focus-visible::before { content: "+"; position: absolute; left: 4px; color: var(--note); font-weight: 600; }
+.m { text-align: center; user-select: none; }
+.t { white-space: pre; padding-right: 16px; }
+.r-add > * { background: color-mix(in oklch, var(--ok) 10%, transparent); }
+.r-del > * { background: color-mix(in oklch, var(--bad) 10%, transparent); }
+.r-add .m { color: var(--ok); } .r-del .m { color: var(--bad); }
+.r-noted > .t { box-shadow: inset 2px 0 0 var(--note); }
+
+.note-row { grid-column: 1 / -1; padding: 6px 10px 8px 98px; background: color-mix(in oklch, var(--note) 6%, var(--term-bg)); border-block: 1px solid color-mix(in oklch, var(--note) 25%, transparent); }
+@media (max-width: 560px) { .note-row { padding-left: 12px; } }
+.note-card { display: grid; gap: 6px; max-width: 520px; font-family: var(--font-ui); font-size: 13px; }
+.note-card .who { font-family: var(--font-mono); font-size: 11px; color: var(--note); display: flex; gap: 8px; align-items: center; }
+.note-card .who .x { margin-left: auto; }
+.note-card textarea { width: 100%; min-height: 54px; resize: vertical; background: var(--bg); color: var(--ink); border: 1px solid var(--note); border-radius: 4px; padding: 6px 8px; font: inherit; }
+.note-card .body { color: var(--ink); white-space: pre-wrap; }
+.note-card.sent { opacity: .55; }
+.note-card .row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+button { font: inherit; cursor: pointer; border-radius: 4px; border: 1px solid var(--line); background: var(--hover); color: var(--ink); padding: 3px 10px; font-size: 12.5px; }
+button:hover { border-color: var(--ink-2); }
+button:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+button.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
+button.primary:disabled { opacity: .4; cursor: not-allowed; }
+button.link { background: none; border: none; color: var(--ink-2); padding: 0 2px; }
+button.link:hover { color: var(--ink); }
+
+.send-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 10px; background: var(--term-bar); border-top: 1px solid var(--line); font-size: 12.5px; }
+.send-bar .count { font-family: var(--font-mono); color: var(--note); font-weight: 500; }
+.send-bar .spacer { flex: 1; }
+select { font: inherit; font-size: 12.5px; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 3px 6px; max-width: 100%; }
+
+/* terminal */
+.term { flex: 1; padding: 10px 12px; font-family: var(--font-mono); font-size: 12.5px; color: var(--term-ink); line-height: 1.6; display: flex; flex-direction: column; gap: 8px; min-height: 340px; }
+.term .out { color: var(--ink-2); white-space: pre-wrap; }
+.term .out b { color: var(--term-ink); font-weight: 500; }
+.composer { margin-top: auto; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: var(--term-you); min-height: 64px; white-space: pre-wrap; position: relative; overflow-wrap: anywhere; }
+.composer .ph { color: var(--ink-2); }
+.composer .caret { display: inline-block; width: 7px; height: 14px; background: var(--term-ink); vertical-align: -2px; animation: blink 1s steps(1) infinite; }
+.composer.flash { box-shadow: 0 0 0 2px var(--note); }
+.paste-tag { position: absolute; top: -10px; right: 8px; font-size: 10.5px; padding: 0 6px; border-radius: 999px; background: var(--note); color: var(--on-accent); font-weight: 600; }
+@keyframes blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .composer .caret { animation: none; } }
+
+.hint { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; color: var(--ink-2); font-size: 13px; margin-top: 10px; }
+.kbd { font-family: var(--font-mono); font-size: 11.5px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; color: var(--ink); }
+
+/* ---------- before / after ---------- */
+.versus { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 760px) { .versus { grid-template-columns: minmax(0, 1fr); } }
+.lane { border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: grid; gap: 14px; align-content: start; background: var(--panel); }
+.lane.after { border-color: color-mix(in oklch, var(--accent) 45%, var(--line)); }
+.lane-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.lane-head .tally { margin-left: auto; font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; counter-reset: s; }
+.steps li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 14px; counter-increment: s; }
+.steps li::before { content: counter(s); font-family: var(--font-mono); font-size: 11px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--hover); color: var(--ink-2); }
+.lane.after .steps li::before { background: var(--selected); color: var(--accent); }
+.steps .rep { color: var(--bad); font-family: var(--font-mono); font-size: 12px; }
+
+/* ---------- pasted text ---------- */
+.pre { background: var(--term-bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.65; white-space: pre; overflow-x: auto; color: var(--term-ink); }
+.pre .q { color: var(--ink-2); } .pre .k { color: var(--note); } .pre .h { color: var(--accent); }
+.anno { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .anno { grid-template-columns: minmax(0, 1fr); } }
+.anno div { border-top: 2px solid var(--line); padding-top: 8px; font-size: 13.5px; color: var(--ink-2); }
+.anno strong { color: var(--ink); display: block; font-weight: 600; margin-bottom: 2px; }
+
+/* ---------- pipeline ---------- */
+.pipe-scroll { overflow-x: auto; }
+.pipe { display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); gap: 0; min-width: 780px; align-items: stretch; }
+.node { position: relative; border: 1px solid var(--line); background: var(--panel); border-radius: var(--radius); padding: 12px; margin-right: 26px; display: grid; gap: 6px; align-content: start; }
+.node:last-child { margin-right: 0; }
+.node:not(:last-child)::after { content: "→"; position: absolute; right: -21px; top: 50%; transform: translateY(-50%); color: var(--ink-2); font-size: 16px; }
+.node .tag { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; }
+.tag.reuse { color: var(--ok); } .tag.new { color: var(--note); }
+.node .file { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-2); overflow-wrap: anywhere; }
+.node p { font-size: 13px; }
+.legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--ink-2); }
+.legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: 0; }
+.legend .l-reuse::before { background: var(--ok); } .legend .l-new::before { background: var(--note); }
+
+/* ---------- edge cases ---------- */
+.cases { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .cases { grid-template-columns: minmax(0, 1fr); } }
+.case { border-left: 3px solid var(--line); padding: 4px 0 4px 14px; display: grid; gap: 4px; }
+.case.warn { border-color: var(--warn); } .case.ok { border-color: var(--ok); }
+.case p { font-size: 14px; color: var(--ink-2); }
+
+/* ---------- decision ---------- */
+.decide { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 760px) { .decide { grid-template-columns: minmax(0, 1fr); } }
+.opt { border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; background: var(--panel); display: grid; gap: 8px; align-content: start; }
+.opt.rec { border-color: var(--accent); }
+.opt .badge { justify-self: start; font-size: 11px; font-family: var(--font-mono); padding: 1px 8px; border-radius: 999px; background: var(--selected); color: var(--accent); }
+.opt p { font-size: 14px; color: var(--ink-2); }
+.opt .vis { font-family: var(--font-mono); font-size: 12px; background: var(--term-bg); border-radius: 4px; padding: 8px 10px; color: var(--ink-2); }
+.opt .vis b { color: var(--note); font-weight: 500; }
+
+/* ---------- later ---------- */
+.later { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .later { grid-template-columns: minmax(0, 1fr); } }
+.later div { border: 1px dashed var(--line); border-radius: var(--radius); padding: 14px; display: grid; gap: 4px; }
+.later p { font-size: 13.5px; color: var(--ink-2); }
+.later .src { font-family: var(--font-mono); font-size: 11px; color: var(--ink-2); }
+
+/* ---------- v2 additions ---------- */
+.git-body { display: grid; grid-template-columns: 190px minmax(0, 1fr); min-height: 0; }
+@media (max-width: 560px) { .git-body { grid-template-columns: minmax(0, 1fr); } }
+.files { border-right: 1px solid var(--line); background: var(--term-header); padding: 6px 0; display: grid; align-content: start; }
+@media (max-width: 560px) { .files { border-right: none; border-bottom: 1px solid var(--line); } }
+.files .lbl { font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); padding: 4px 10px; }
+.frow { display: flex; align-items: center; gap: 6px; padding: 4px 10px; font-family: var(--font-mono); font-size: 12px; background: none; border: none; border-radius: 0; text-align: left; color: var(--ink); width: 100%; }
+.frow:hover { background: var(--hover); border: none; }
+.frow[aria-current="true"] { background: var(--selected); }
+.frow .fn { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.frow .st { color: var(--warn); font-size: 11px; }
+.badge-n { font-size: 10.5px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--note); color: var(--on-accent); display: inline-grid; place-items: center; font-weight: 600; }
+.diff-col { min-width: 0; display: flex; flex-direction: column; }
+.diff-grid .r-pick > * { background: color-mix(in oklch, var(--note) 16%, transparent); }
+.kinds, .phrases { display: flex; gap: 5px; flex-wrap: wrap; }
+.kchip { font-size: 11.5px; padding: 1px 9px; border-radius: 999px; background: var(--bg); }
+.kchip[aria-pressed="true"] { background: var(--note); color: var(--on-accent); border-color: var(--note); font-weight: 600; }
+.pchip { font-size: 11.5px; padding: 1px 8px; border-radius: 4px; border-style: dashed; background: none; color: var(--ink-2); }
+.pchip:hover { color: var(--ink); }
+.ktag { font-family: var(--font-mono); font-size: 10.5px; padding: 0 6px; border-radius: 3px; background: var(--note-bg); color: var(--note); }
+.status { font-family: var(--font-mono); font-size: 10.5px; padding: 0 6px; border-radius: 999px; border: 1px solid var(--line); }
+.status.sent { color: var(--accent); border-color: color-mix(in oklch, var(--accent) 45%, transparent); }
+.status.touched { color: var(--ok); border-color: color-mix(in oklch, var(--ok) 45%, transparent); }
+.status.untouched { color: var(--bad); border-color: color-mix(in oklch, var(--bad) 45%, transparent); }
+.note-card.done { opacity: .8; }
+.sim { align-self: flex-start; }
+.improve { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .improve { grid-template-columns: minmax(0, 1fr); } }
+.imp { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; background: var(--panel); display: grid; gap: 6px; align-content: start; }
+.imp p { font-size: 14px; color: var(--ink-2); }
+.imp .try { font-family: var(--font-mono); font-size: 11.5px; color: var(--note); }
+.chosen { display: flex; gap: 8px; flex-wrap: wrap; }
+.chosen span { font-size: 12.5px; padding: 3px 10px; border-radius: 999px; background: var(--selected); color: var(--ink); }
+.chosen span::before { content: "✓ "; color: var(--ok); }
+</style>
+
+<div class="wrap">
+
+  <header class="stack prose">
+    <span class="eyebrow">Agentic OS · propuesta v2</span>
+    <h1>Notas en el diff</h1>
+    <p class="lead">Lees el diff en el tile git, comentas las líneas que no te gustan y mandas todas las notas de una vez al agente que trabaja en ese checkout. Después, cada nota te dice si el agente tocó su línea o la dejó igual.</p>
+    <div class="chosen">
+      <span>¿Atendida?</span><span>Tipo y frases rápidas</span><span>Rango de líneas</span><span>Contador por fichero</span><span>Sobrevive a una recarga</span>
+    </div>
+  </header>
+
+  <!-- ===== Live replica ===== -->
+  <section class="stack" aria-labelledby="try">
+    <div class="prose stack">
+      <h2 id="try">Pruébalo aquí</h2>
+      <p class="muted">Réplica de dos tiles de la Mesa con datos de ejemplo. Clic en un número de línea para una nota; Mayús+clic en otra línea del mismo bloque para un rango. Envía, y luego pulsa «Simular la respuesta del agente».</p>
+    </div>
+
+    <div class="mesa">
+      <section class="tile" aria-label="Tile git">
+        <div class="tile-head">
+          <span class="dot" style="background: var(--h-git)"></span>
+          <span class="name">Git</span>
+          <span class="where">envs/tkt-123 › back</span>
+          <span class="spacer"></span>
+          <span class="chip">feature/TKT-123</span>
+        </div>
+        <div class="git-body">
+          <nav class="files" aria-label="Ficheros cambiados">
+            <span class="lbl">Sin preparar</span>
+            <div id="files"></div>
+          </nav>
+          <div class="diff-col">
+            <div class="file-bar" id="file-bar"></div>
+            <div class="diff"><div class="diff-grid" id="diff"></div></div>
+          </div>
+        </div>
+        <div class="send-bar">
+          <span class="count" id="count"></span>
+          <span class="muted" id="count-sub"></span>
+          <button type="button" class="link" id="clear" hidden>Limpiar enviadas</button>
+          <span class="spacer"></span>
+          <label for="target" class="muted">Enviar a</label>
+          <select id="target">
+            <option value="claude">Claude · tkt-123 › back</option>
+            <option value="codex">Codex · tkt-123 › back</option>
+            <option value="grok" disabled>Grok · tkt-140 (otro checkout)</option>
+          </select>
+          <button type="button" class="primary" id="send">Enviar</button>
+        </div>
+      </section>
+
+      <section class="tile" aria-label="Tile de terminal">
+        <div class="tile-head">
+          <span class="dot" id="term-dot" style="background: var(--h-claude)"></span>
+          <span class="name" id="term-name">Claude</span>
+          <span class="where">envs/tkt-123/back</span>
+          <span class="spacer"></span>
+          <span class="chip working" id="term-state">Espera tu turno</span>
+        </div>
+        <div class="term">
+          <div class="out" id="term-out"><b>● He cambiado export_assets</b> para cargar los racks de una vez.
+  ⎿ apps/assets/views.py  +5 −1
+  ⎿ apps/assets/tests/test_views.py  +3
+
+¿Revisas el diff antes de seguir?</div>
+          <button type="button" class="sim" id="simulate" hidden>Simular la respuesta del agente</button>
+          <div class="composer" id="composer"><span class="ph">› Escribe un mensaje…</span><span class="caret"></span></div>
+        </div>
+      </section>
+    </div>
+    <div class="hint">
+      <span><span class="kbd">clic</span> nueva nota</span>
+      <span><span class="kbd">⇧ clic</span> rango</span>
+      <span><span class="kbd">⌘↵</span> guarda</span>
+      <span><span class="kbd">Esc</span> descarta</span>
+    </div>
+  </section>
+
+  <!-- ===== Improvements ===== -->
+  <section class="stack" aria-labelledby="imp">
+    <h2 id="imp">Las cuatro mejoras</h2>
+    <div class="improve">
+      <div class="imp"><h3>¿Atendida?</h3><p>Tras enviar, cada nota vigila sus líneas en cada refresco del diff. Si el texto citado ya no está, pasa a <span class="status touched">tocada</span>; si sigue igual, <span class="status untouched">sin tocar</span>. Ves de un vistazo qué ignoró el agente sin releer el diff.</p><span class="try">pruébalo: envía y simula la respuesta</span></div>
+      <div class="imp"><h3>Tipo y frases rápidas</h3><p>Cuatro tipos al estilo Conventional Comments: cambio, pregunta, nit, no tocar. Y tus frases de siempre en un clic: «fuera de alcance», «¿dónde más se usa?», «hazlo más simple», «añade un test». El agente sabe qué es obligatorio y qué es opinión.</p><span class="try">pruébalo: abre una nota nueva</span></div>
+      <div class="imp"><h3>Rango de líneas</h3><p>Mayús+clic en otra línea del mismo bloque marca todas las de en medio. El agente recibe el bloque entero citado, hasta 20 líneas.</p><span class="try">pruébalo: clic en 42 y Mayús+clic en 44</span></div>
+      <div class="imp"><h3>Contador por fichero</h3><p>En la lista de ficheros, un globo con las notas pendientes de cada uno. «Enviar» manda las de todo el checkout en un solo pegado, agrupadas por fichero.</p><span class="try">pruébalo: cambia de fichero a la izquierda</span></div>
+    </div>
+  </section>
+
+  <!-- ===== Before / after ===== -->
+  <section class="stack" aria-labelledby="vs">
+    <h2 id="vs">Lo que cambia en tu día</h2>
+    <div class="versus">
+      <div class="lane">
+        <div class="lane-head"><h3>Hoy</h3><span class="tally">≈ 6 pasos por nota + releer</span></div>
+        <ol class="steps">
+          <li>Ves algo raro en el diff.</li>
+          <li>Copias la ruta del fichero.</li>
+          <li>Buscas y escribes el número de línea.</li>
+          <li>Copias la línea para que el agente sepa cuál es.</li>
+          <li>Cambias a la terminal y escribes qué quieres. <span class="rep">↺ por cada nota</span></li>
+          <li>Cuando el agente acaba, relees todo el diff para ver si hizo caso.</li>
+        </ol>
+      </div>
+      <div class="lane after">
+        <div class="lane-head"><h3>Con notas en el diff</h3><span class="tally">2 pasos por nota + 1 envío</span></div>
+        <ol class="steps">
+          <li>Clic (o Mayús+clic para un rango) y eliges el tipo.</li>
+          <li>Escribes o pulsas una frase rápida. Sigues leyendo.</li>
+          <li>«Enviar» una vez. Al volver, los globos verdes y rojos te dicen qué quedó sin tocar.</li>
+        </ol>
+      </div>
+    </div>
+    <p class="muted prose">Acorta dos rituales de tu perfil: el 2 (implementar con barreras: «¿esto está en alcance?», «¿dónde más se usa?») y el 6 (responder a la revisión con verificación).</p>
+  </section>
+
+  <!-- ===== What the agent receives ===== -->
+  <section class="stack" aria-labelledby="txt">
+    <h2 id="txt">Lo que recibe el agente</h2>
+    <div class="pre" id="preview" aria-live="polite"></div>
+    <div class="anno">
+      <div><strong>Cita las líneas</strong>Si el agente edita el fichero mientras escribes, el número puede moverse; el texto citado le dice cuál era.</div>
+      <div><strong>Tipo entre corchetes</strong>«[no tocar]» y «[nit]» no se leen igual que «[cambio]». El agente prioriza sin adivinar.</div>
+      <div><strong>Nunca pulsa Enter</strong>Lo redacta el servidor, como un ticket o un PR hoy, y queda en el composer para que añadas algo.</div>
+    </div>
+  </section>
+
+  <!-- ===== Pipeline ===== -->
+  <section class="stack" aria-labelledby="how">
+    <h2 id="how">Cómo se construye</h2>
+    <div class="legend"><span class="l-reuse">ya existe, se reutiliza</span><span class="l-new">nuevo</span></div>
+    <div class="pipe-scroll">
+      <div class="pipe">
+        <div class="node"><span class="tag new">nuevo</span><h3>Gutter y nota</h3><span class="file">git/diff-view.tsx · git/note-card.tsx</span><p>Clic, Mayús+clic, tipos y frases. Unified y split.</p></div>
+        <div class="node"><span class="tag new">nuevo</span><h3>Notas del checkout</h3><span class="file">git/notes.ts</span><p><code>storageFamily</code> por checkout; <code>noteStatus</code> decide tocada o sin tocar.</p></div>
+        <div class="node"><span class="tag reuse">reutiliza</span><h3>BringItem</h3><span class="file">terminals/bring.ts</span><p>Una variante más: <code>{ notes }</code>, validada con zod.</p></div>
+        <div class="node"><span class="tag reuse">reutiliza</span><h3>POST /bring</h3><span class="file">terminals/routes.ts + notes-prompt.ts</span><p>Misma ruta y <code>local-guard</code>; el texto lo redacta el servidor.</p></div>
+        <div class="node"><span class="tag reuse">reutiliza</span><h3>Pegado en el PTY</h3><span class="file">PTY host</span><p>Bracketed paste, sin Enter, como ⌘V.</p></div>
+      </div>
+    </div>
+    <p class="muted prose">Sin ruta nueva, sin tabla, sin migración. El destino solo ofrece agentes en marcha en el mismo checkout; una shell recibe un 409 porque las notas son para un agente.</p>
+  </section>
+
+  <!-- ===== Edge cases ===== -->
+  <section class="stack" aria-labelledby="edge">
+    <h2 id="edge">Qué pasa cuando algo se tuerce</h2>
+    <div class="cases">
+      <div class="case warn"><h3>El agente cambia el fichero mientras escribes</h3><p>La nota sigue anclada a su texto citado; al enviar va con él, así que no hay ambigüedad.</p></div>
+      <div class="case warn"><h3>«Tocada» no es «bien hecha»</h3><p>Solo dice que esas líneas cambiaron. Que el cambio sea el correcto lo juzgas tú; por eso es un globo, no un ✓.</p></div>
+      <div class="case ok"><h3>El fichero sale de la lista</h3><p>Si el agente revierte el fichero entero, sus notas pasan a tocadas.</p></div>
+      <div class="case ok"><h3>Recargas o reinicias</h3><p>Las notas viven en el navegador por checkout. Las enviadas de hace más de 7 días se limpian solas; tope de 200 por checkout.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Later ===== -->
+  <section class="stack" aria-labelledby="next">
+    <h2 id="next">Lo que viene detrás</h2>
+    <div class="later">
+      <div><h3>Tile de navegador</h3><p>Captura del entorno del ticket; clic en un elemento y su HTML y CSS van al agente.</p><span class="src">Orca · Superset · Agentastic</span></div>
+      <div><h3>Diff por capítulos</h3><p>Un PR grande en bloques lógicos, con hallazgos por gravedad. Para revisar a un compañero.</p><span class="src">Agentastic · Devin Review</span></div>
+      <div><h3>Best-of-N por worktree</h3><p>El mismo ticket a Claude y a Codex, con los dos diffs uno al lado del otro.</p><span class="src">Orca · GitHub Agent HQ</span></div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(() => {
+  const LOC = "envs/tkt-123 › back";
+  const KINDS = ["cambio", "pregunta", "nit", "no tocar"];
+  const PHRASES = ["Fuera de alcance del ticket.", "¿Dónde más se usa? Comprueba que no rompe otros usos.", "Hazlo más simple, con menos líneas.", "Añade un test que lo cubra."];
+  // [kind, old, new, text]; kind: h hunk, c context, a add, d del
+  const BEFORE = {
+    "apps/assets/views.py": [
+      ["h", null, null, "@@ -40,6 +40,10 @@ def export_assets(request):"],
+      ["c", 40, 40, "def export_assets(request):"],
+      ["c", 41, 41, "    qs = Asset.objects.filter(site=request.site)"],
+      ["d", 42, null, "    rows = [serialize(a) for a in qs]"],
+      ["a", null, 42, "    rows = []"],
+      ["a", null, 43, "    for a in qs.select_related(\"rack\"):"],
+      ["a", null, 44, "        rows.append(serialize(a))"],
+      ["c", 43, 45, "    if request.GET.get(\"format\") == \"csv\":"],
+      ["a", null, 46, "        log.info(\"csv export %s\", len(rows))"],
+      ["c", 44, 47, "        return to_csv(rows)"],
+      ["a", null, 48, "    # TODO: paginate"],
+      ["c", 45, 49, "    return JsonResponse({\"rows\": rows})"],
+    ],
+    "apps/assets/tests/test_views.py": [
+      ["h", null, null, "@@ -12,3 +12,6 @@ class ExportTests(TestCase):"],
+      ["c", 12, 12, "    def test_json(self):"],
+      ["c", 13, 13, "        res = self.client.get(URL)"],
+      ["c", 14, 14, "        self.assertEqual(res.status_code, 200)"],
+      ["a", null, 15, "    def test_csv(self):"],
+      ["a", null, 16, "        res = self.client.get(URL + \"?format=csv\")"],
+      ["a", null, 17, "        self.assertTrue(res.content)"],
+    ],
+  };
+  // What the diff looks like after the agent answers: it fixed the loop and the TODO, left the log.
+  const AFTER = {
+    "apps/assets/views.py": [
+      ["h", null, null, "@@ -40,6 +40,7 @@ def export_assets(request):"],
+      ["c", 40, 40, "def export_assets(request):"],
+      ["d", 41, null, "    qs = Asset.objects.filter(site=request.site)"],
+      ["a", null, 41, "    qs = Asset.objects.filter(site=request.site).select_related(\"rack\")"],
+      ["c", 42, 42, "    rows = [serialize(a) for a in qs]"],
+      ["c", 43, 43, "    if request.GET.get(\"format\") == \"csv\":"],
+      ["a", null, 44, "        log.info(\"csv export %s\", len(rows))"],
+      ["c", 44, 45, "        return to_csv(rows)"],
+      ["c", 45, 46, "    return JsonResponse({\"rows\": rows})"],
+    ],
+    "apps/assets/tests/test_views.py": BEFORE["apps/assets/tests/test_views.py"],
+  };
+  let FILES = BEFORE;
+  const AGENTS = { claude: { name: "Claude", color: "var(--h-claude)" }, codex: { name: "Codex", color: "var(--h-codex)" } };
+
+  let file = "apps/assets/views.py";
+  const seed = (f, from, to, kind, text) => ({ file: f, q: BEFORE[f].slice(from, to + 1), kind, text, state: "pending" });
+  let notes = [
+    seed(file, 5, 6, "cambio", "Mantén la comprensión de lista; solo añade select_related al queryset."),
+    seed(file, 8, 8, "no tocar", "Fuera de alcance del ticket. Quita este log."),
+    seed(file, 10, 10, "nit", "Sin TODOs sueltos; si hace falta, abre un ticket."),
+    seed("apps/assets/tests/test_views.py", 6, 6, "pregunta", "¿Comprobamos también el Content-Type?"),
+  ];
+  let edit = null; // { from, to, kind }
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const num = (l) => (l[0] === "d" ? l[1] : l[2]);
+  const range = (q) => {
+    const a = q[0], b = q[q.length - 1];
+    const del = a[0] === "d" ? " (borrada)" : "";
+    return q.length === 1 ? `línea ${num(a)}${del}` : `líneas ${num(a)}–${num(b)}`;
+  };
+  const quote = (n) => n.q.map((l) => l[3]);
+  const same = (a, b) => a[0] === b[0] && a[3] === b[3];
+  // Where a note sits in the current diff: after the line matching its last quoted line, or -1.
+  const anchorOf = (n, lines) => {
+    const end = lines.findIndex((l) => same(l, n.q[n.q.length - 1]));
+    const start = end - n.q.length + 1;
+    return start >= 0 && n.q.every((x, k) => same(x, lines[start + k])) ? end : -1;
+  };
+  const pending = () => notes.filter((n) => n.state === "pending");
+  // A sent note is touched when its quoted lines are no longer all in the file's current diff.
+  const statusOf = (n) => {
+    if (n.state === "pending") return null;
+    if (FILES === BEFORE) return "sent";
+    return anchorOf(n, FILES[n.file]) >= 0 ? "untouched" : "touched";
+  };
+  const STATUS = { sent: "enviada", touched: "tocada", untouched: "sin tocar" };
+
+  function renderFiles() {
+    $("files").innerHTML = Object.keys(FILES).map((f) => {
+      const n = pending().filter((x) => x.file === f).length;
+      const name = f.split("/").pop();
+      return `<button class="frow" data-file="${esc(f)}" aria-current="${f === file}" title="${esc(f)}"><span class="st">M</span><span class="fn">${esc(name)}</span>${n ? `<span class="badge-n" aria-label="${n} notas pendientes">${n}</span>` : ""}</button>`;
+    }).join("");
+    const lines = FILES[file];
+    const add = lines.filter((l) => l[0] === "a").length, del = lines.filter((l) => l[0] === "d").length;
+    $("file-bar").innerHTML = `<span>${esc(file)}</span><span class="add">+${add}</span><span class="del">−${del}</span>`;
+  }
+
+  function noteCard(n) {
+    const st = statusOf(n);
+    const idx = notes.indexOf(n);
+    return `<div class="note-row"><div class="note-card ${st ? "done" : ""}">`
+      + `<span class="who"><span class="ktag">${esc(n.kind)}</span>${range(n.q)}${st ? ` <span class="status ${st}">${STATUS[st]}</span>` : ""}`
+      + `<span class="x">${st ? "" : `<button class="link" data-del="${idx}">Borrar</button>`}</span></span>`
+      + `<div class="body">${esc(n.text)}</div></div></div>`;
+  }
+
+  function editor() {
+    const k = KINDS.map((x) => `<button class="kchip" data-kind="${x}" aria-pressed="${edit.kind === x}">${x}</button>`).join("");
+    const p = PHRASES.map((x, i) => `<button class="pchip" data-phrase="${i}">${esc(x.replace(/\.$/, ""))}</button>`).join("");
+    const r = range(FILES[file].slice(edit.from, edit.to + 1));
+    return `<div class="note-row"><div class="note-card"><span class="who">Nueva nota · ${r}${edit.from === edit.to ? " · Mayús+clic para un rango" : ""}</span>`
+      + `<div class="kinds" role="group" aria-label="Tipo">${k}</div>`
+      + `<textarea id="note-input" aria-label="Texto de la nota" placeholder="¿Qué debe hacer el agente aquí?"></textarea>`
+      + `<div class="phrases" aria-label="Frases rápidas">${p}</div>`
+      + `<div class="row"><button class="primary" id="note-save">Guardar nota</button><button id="note-cancel">Descartar</button></div></div></div>`;
+  }
+
+  function renderDiff(keepText) {
+    const old = $("note-input") ? $("note-input").value : "";
+    const lines = FILES[file];
+    const here = notes.filter((x) => x.file === file).map((x) => ({ x, end: anchorOf(x, lines) }));
+    const gone = here.filter((h) => h.end < 0);
+    let html = gone.length ? `<div class="hunk" style="color: var(--ink-2)">Notas sobre líneas que ya no están en el diff</div>${gone.map((h) => noteCard(h.x)).join("")}` : "";
+    lines.forEach(([k, o, n, t], i) => {
+      if (k === "h") { html += `<div class="hunk">${esc(t)}</div>`; return; }
+      const mine = here.filter((h) => h.end === i).map((h) => h.x);
+      const covered = here.some((h) => h.end >= 0 && i <= h.end && i > h.end - h.x.q.length);
+      const picking = edit && i >= edit.from && i <= edit.to;
+      const cls = { c: "", a: "r-add", d: "r-del" }[k];
+      const mark = { c: " ", a: "+", d: "−" }[k];
+      html += `<div class="${cls} ${covered ? "r-noted" : ""} ${picking ? "r-pick" : ""}" style="display:contents">`
+        + `<span class="g click" tabindex="0" role="button" aria-label="Nota en la línea ${o ?? n}" data-i="${i}">${o ?? ""}</span>`
+        + `<span class="g click" tabindex="-1" data-i="${i}">${n ?? ""}</span>`
+        + `<span class="m">${mark}</span><span class="t">${esc(t) || " "}</span></div>`;
+      mine.forEach((x) => { html += noteCard(x); });
+      if (edit && edit.to === i) html += editor();
+    });
+    $("diff").innerHTML = html;
+    const ta = $("note-input");
+    if (ta) { if (keepText) ta.value = old; ta.focus(); }
+  }
+
+  function renderBar() {
+    const p = pending().length;
+    const sent = notes.length - p;
+    $("count").textContent = p === 1 ? "1 nota" : `${p} notas`;
+    const files = new Set(pending().map((n) => n.file)).size;
+    $("count-sub").textContent = p ? `en ${files} ${files === 1 ? "fichero" : "ficheros"}` : sent ? "todo enviado" : "sin notas";
+    $("send").disabled = p === 0;
+    $("send").textContent = p ? `Enviar ${p}` : "Nada que enviar";
+    $("clear").hidden = sent === 0;
+  }
+
+  function plain() {
+    const list = pending();
+    let s = `Notas sobre el diff (${LOC}):\n`;
+    let k = 0;
+    for (const f of Object.keys(BEFORE)) {
+      const mine = list.filter((n) => n.file === f).sort((a, b) => num(a.q[0]) - num(b.q[0]));
+      if (!mine.length) continue;
+      s += `\n${f}\n`;
+      mine.forEach((n) => { s += `${++k}. [${n.kind}] ${range(n.q)}\n${quote(n).map((q) => `   > ${q.trim()}`).join("\n")}\n   ${n.text}\n`; });
+    }
+    return s;
+  }
+
+  function renderPreview() {
+    const list = pending().length ? pending() : notes;
+    if (!list.length) { $("preview").innerHTML = `<span class="q">Añade una nota arriba para ver aquí el texto.</span>`; return; }
+    let s = `<span class="h">Notas sobre el diff (${esc(LOC)}):</span>\n`;
+    let k = 0;
+    for (const f of Object.keys(BEFORE)) {
+      const mine = list.filter((n) => n.file === f).sort((a, b) => num(a.q[0]) - num(b.q[0]));
+      if (!mine.length) continue;
+      s += `\n<span class="k">${esc(f)}</span>\n`;
+      mine.forEach((n) => { s += `${++k}. <span class="k">[${esc(n.kind)}]</span> ${esc(range(n.q))}\n${quote(n).map((q) => `   <span class="q">&gt; ${esc(q.trim())}</span>`).join("\n")}\n   ${esc(n.text)}\n`; });
+    }
+    $("preview").innerHTML = s;
+  }
+
+  const render = (keepText) => { renderFiles(); renderDiff(keepText); renderBar(); renderPreview(); };
+
+  function pick(i, shift) {
+    const lines = FILES[file];
+    const hunkOf = (x) => { let h = 0; for (let j = 0; j <= x; j++) if (lines[j][0] === "h") h = j; return h; };
+    if (shift && edit && hunkOf(i) === hunkOf(edit.from)) {
+      const a = Math.min(edit.anchor, i), b = Math.max(edit.anchor, i);
+      if (b - a < 20) { edit.from = a; edit.to = b; render(true); return; }
+    }
+    edit = { from: i, to: i, anchor: i, kind: "cambio" };
+    render(false);
+  }
+
+  function save() {
+    const text = ($("note-input")?.value || "").trim();
+    if (text) notes.push({ file, q: FILES[file].slice(edit.from, edit.to + 1), kind: edit.kind, text, state: "pending" });
+    edit = null; render(false);
+  }
+
+  $("files").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-file]");
+    if (b) { file = b.dataset.file; edit = null; render(false); }
+  });
+  $("diff").addEventListener("click", (e) => {
+    const g = e.target.closest(".g.click");
+    if (g) { pick(Number(g.dataset.i), e.shiftKey); return; }
+    const kb = e.target.closest("[data-kind]");
+    if (kb) { edit.kind = kb.dataset.kind; render(true); return; }
+    const ph = e.target.closest("[data-phrase]");
+    if (ph) { const ta = $("note-input"); ta.value = `${ta.value ? `${ta.value.trim()} ` : ""}${PHRASES[Number(ph.dataset.phrase)]}`; ta.focus(); return; }
+    const del = e.target.closest("[data-del]");
+    if (del) { notes.splice(Number(del.dataset.del), 1); render(false); return; }
+    if (e.target.id === "note-save") save();
+    if (e.target.id === "note-cancel") { edit = null; render(false); }
+  });
+  $("diff").addEventListener("keydown", (e) => {
+    const g = e.target.closest(".g.click");
+    if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); pick(Number(g.dataset.i), e.shiftKey); }
+    if (e.target.id === "note-input") {
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); save(); }
+      if (e.key === "Escape") { edit = null; render(false); }
+    }
+  });
+  $("target").addEventListener("change", () => {
+    const a = AGENTS[$("target").value];
+    $("term-name").textContent = a.name;
+    $("term-dot").style.background = a.color;
+  });
+  $("clear").addEventListener("click", () => { notes = notes.filter((n) => n.state === "pending"); render(false); });
+
+  let typing = null;
+  $("send").addEventListener("click", () => {
+    if (!pending().length) return;
+    const text = plain();
+    const comp = $("composer");
+    clearInterval(typing);
+    notes.forEach((n) => { n.state = "sent"; });
+    render(false);
+    comp.classList.add("flash");
+    $("term-state").textContent = "Texto pegado · sin Enter";
+    $("term-state").className = "chip new";
+    $("simulate").hidden = false;
+    const show = (n) => { comp.innerHTML = `<span class="paste-tag">pegado</span>› ${esc(text.slice(0, n))}<span class="caret"></span>`; };
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) show(text.length);
+    else { let n = 0; typing = setInterval(() => { n = Math.min(text.length, n + 12); show(n); if (n >= text.length) clearInterval(typing); }, 16); }
+    setTimeout(() => comp.classList.remove("flash"), 1400);
+  });
+
+  $("simulate").addEventListener("click", () => {
+    clearInterval(typing);
+    FILES = AFTER;
+    $("simulate").hidden = true;
+    $("composer").innerHTML = `<span class="ph">› Escribe un mensaje…</span><span class="caret"></span>`;
+    $("term-out").innerHTML = `<b>● Hecho.</b> select_related va al queryset y vuelvo a la comprensión de lista. Quité el TODO.\n  ⎿ apps/assets/views.py  +2 −1\n\n¿Algo más?`;
+    $("term-state").textContent = "Espera tu turno";
+    $("term-state").className = "chip working";
+    render(false);
+  });
+
+  render(false);
+})();
+</script>

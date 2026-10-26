@@ -1,0 +1,4 @@
+/* The line a diff or a definition opened at. Monaco keeps only plain class names. */
+.code-line-mark {
+  background: var(--selected);
+}

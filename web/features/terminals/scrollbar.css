@@ -1,0 +1,16 @@
+/* The thumb of xterm's scrollbar as a rounded pill inset in its 14px track; it widens on
+   hover and while dragged. The track keeps its full hit area, and xterm still shows it on
+   scroll or pointer and fades it at rest. Colours live in the terminal theme; xterm writes
+   them with the `background` shorthand, so each rule here sets the clip again. */
+.xterm .xterm-scrollable-element > .xterm-scrollbar.xterm-vertical > .xterm-slider {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+  transition: border-width 120ms ease-out;
+}
+
+.xterm .xterm-scrollable-element > .xterm-scrollbar.xterm-vertical:hover > .xterm-slider,
+.xterm .xterm-scrollable-element > .xterm-scrollbar.xterm-vertical > .xterm-slider.xterm-active {
+  border-width: 1px;
+  background-clip: padding-box;
+}

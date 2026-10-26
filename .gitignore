@@ -1,0 +1,16 @@
+node_modules/
+data/
+*.db
+*.db-*
+.env
+.env.*
+cache/
+test-results/
+playwright-report/
+docs/evidence/
+dist/
+.claude/learned/*.log
+dist.next/
+dist.prev/
+dist.lock/
+*.bun-build

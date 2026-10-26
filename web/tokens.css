@@ -1,0 +1,674 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* Dark only (refactor plan D4): every `dark:` utility in the shadcn components always applies. */
+@custom-variant dark (&:where(*));
+
+/* Linear-like: quiet neutrals with a violet-blue bias, one accent, dense 13px UI type. */
+:root {
+  --bg: oklch(0.16 0.006 270);
+  --panel: oklch(0.2 0.007 270);
+  --ink: oklch(0.94 0.004 270);
+  --ink-2: oklch(0.68 0.01 270);
+  --line: oklch(0.28 0.008 270);
+  --accent: oklch(0.7 0.15 275);
+  /* Text on an accent fill: white drops to 2.75:1 on this accent, the background ink holds 7.1:1. */
+  --on-accent: oklch(0.16 0.006 270);
+  --ok: oklch(0.72 0.14 155);
+  --warn: oklch(0.8 0.13 75);
+  --bad: oklch(0.7 0.17 25);
+  --hover: oklch(0.235 0.008 270);
+  --selected: oklch(0.27 0.03 275);
+  --scroll-thumb: oklch(0.5 0.012 270);
+  /* One colour per harness. L 0.62 holds ≥3:1 on the panel and the terminal's own dark header. */
+  --h-claude: oklch(0.62 0.15 45);
+  --h-codex: oklch(0.62 0.12 170);
+  --h-grok: oklch(0.62 0.14 245);
+  --h-shell: oklch(0.62 0.03 270);
+  --h-env: oklch(0.62 0.17 320);
+  /* Not harnesses: the Mesa's git, code and recorded-meeting tiles. */
+  --h-git: oklch(0.62 0.12 95);
+  --h-code: oklch(0.62 0.13 280);
+  --h-rec: oklch(0.62 0.15 5);
+  /* Work blocks in the Mesa bar (shared/workspace.ts BLOCK_COLORS): a round dot, lighter than
+     the harness squares so the two never read as the same thing. */
+  --blk-slate: oklch(0.7 0.02 270);
+  --blk-blue: oklch(0.7 0.12 245);
+  --blk-green: oklch(0.7 0.13 155);
+  --blk-amber: oklch(0.74 0.13 75);
+  --blk-rose: oklch(0.7 0.14 15);
+  --blk-violet: oklch(0.7 0.13 300);
+  /* Project tags (shared/project-colors.ts PROJECT_COLORS): text at L 0.8 holds ≥4.5:1 on the
+     panel over its own 16 % fill. */
+  --prj-orange: oklch(0.8 0.13 55);
+  --prj-violet: oklch(0.8 0.11 295);
+  --prj-teal: oklch(0.8 0.1 190);
+  --prj-blue: oklch(0.8 0.1 245);
+  --prj-green: oklch(0.8 0.12 150);
+  --prj-rose: oklch(0.8 0.1 10);
+  --prj-amber: oklch(0.83 0.12 85);
+  --prj-slate: oklch(0.8 0.02 270);
+  /* Consumo's chart series, in this order and never cycled: the sixth and later share
+     «Otros». Checked for colour-blind separation on the page background (dataviz validator). */
+  --cat-1: oklch(0.622 0.161 255);
+  --cat-2: oklch(0.622 0.173 40);
+  --cat-3: oklch(0.621 0.128 163);
+  --cat-4: oklch(0.67 0.143 73);
+  --cat-5: oklch(0.622 0.171 1);
+  --cat-other: oklch(0.559 0.019 268);
+  --shadow-1: 0 1px 2px oklch(0 0 0 / 0.3);
+  --shadow-2: 0 1px 2px oklch(0 0 0 / 0.3), 0 6px 18px oklch(0 0 0 / 0.35);
+  /* The shadcn components derive small corners from it; .btn already uses 6px. */
+  --radius: 6px;
+  /* The terminal's own dark chrome: xterm's background, its header and bars, and the message
+     fills of the reader. Kept apart from the app palette because xterm paints the same values. */
+  --term-bg: #17171c;
+  --term-header: #1c1c22;
+  --term-bar: #22222a;
+  --term-ink: #e4e4ea;
+  --term-accent: #6359f5;
+  --term-you: #2a2440;
+  --term-other: #202027;
+  --term-error: #3a2228;
+  --term-ask: #3a3320;
+  color-scheme: dark;
+}
+/* The accent follows the active Mesa's work block (features/terminals/block-accent.ts), on every
+   page; a Mesa with no block keeps the violet above. */
+:root[data-accent="slate"] {
+  --accent: var(--blk-slate);
+}
+:root[data-accent="blue"] {
+  --accent: var(--blk-blue);
+}
+:root[data-accent="green"] {
+  --accent: var(--blk-green);
+}
+:root[data-accent="amber"] {
+  --accent: var(--blk-amber);
+}
+:root[data-accent="rose"] {
+  --accent: var(--blk-rose);
+}
+:root[data-accent="violet"] {
+  --accent: var(--blk-violet);
+}
+:root[data-accent] {
+  --selected: color-mix(in oklab, var(--accent) 20%, var(--bg));
+}
+
+/* shadcn's semantic names point at the tokens above: one source of values, no second palette.
+   shadcn's "accent" is the quiet hover fill, so the brand accent is `primary` in utilities
+   (`bg-primary`, `text-primary`) while the raw token keeps its name, `--accent`. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-line: var(--line);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --color-term-bg: var(--term-bg);
+  --color-term-header: var(--term-header);
+  --color-term-bar: var(--term-bar);
+  --color-term-ink: var(--term-ink);
+  --color-term-accent: var(--term-accent);
+  --color-term-you: var(--term-you);
+  --color-term-other: var(--term-other);
+  --color-term-error: var(--term-error);
+  --color-term-ask: var(--term-ask);
+  --color-background: var(--bg);
+  --color-foreground: var(--ink);
+  --color-card: var(--panel);
+  --color-card-foreground: var(--ink);
+  --color-popover: var(--panel);
+  --color-popover-foreground: var(--ink);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--on-accent);
+  --color-secondary: var(--hover);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--hover);
+  --color-muted-foreground: var(--ink-2);
+  --color-accent: var(--hover);
+  --color-accent-foreground: var(--ink);
+  --color-destructive: var(--bad);
+  --color-border: var(--line);
+  --color-input: var(--line);
+  --color-ring: var(--accent);
+  --font-sans: "IBM Plex Sans Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-heading: var(--font-sans);
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+/* A status that asks for the eye pulses three times (6 s), then stays lit: an endless loop costs
+   a compositor frame every vsync while it shows (WCAG 2.2.2 asks motion past 5 s to stop too).
+   `useRise` (web/motion.ts) starts it again when there is something new. It ends at full opacity. */
+@theme {
+  --animate-attention: attention 2s cubic-bezier(0.4, 0, 0.6, 1) 3;
+  @keyframes attention {
+    50% {
+      opacity: 0.5;
+    }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+/* Native scrollbars stay thin and show their thumb only while the pointer is over their box.
+   xterm and Monaco draw their own. The thumb holds 3:1 on the background. */
+:where(.overflow-auto, .overflow-y-auto, .overflow-x-auto, .option-list) {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+:where(.overflow-auto, .overflow-y-auto, .overflow-x-auto, .option-list):is(
+  :hover,
+  :focus-visible
+) {
+  scrollbar-color: var(--scroll-thumb) transparent;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+/* The palette's field is its only focus: the open dialog already says where the keys go. */
+.palette [role="combobox"]:focus-visible {
+  outline: none;
+}
+
+/* Components: dense Linear-like rows, quiet chrome, one accent. */
+@layer components {
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 36px;
+    padding: 0 16px;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .row:hover {
+    background: var(--hover);
+  }
+  .row[aria-current="page"] {
+    background: var(--selected);
+  }
+  .row:focus-visible {
+    outline-offset: -2px;
+  }
+  .group-head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 16px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
+    padding: 0 6px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 11px;
+    color: var(--ink-2);
+    white-space: nowrap;
+  }
+  /* Hover changes colour only, fast and easing out; `transition: all` would also animate size. */
+  .row,
+  .btn,
+  .btn-ghost,
+  .nav-item {
+    transition:
+      color 120ms ease-out,
+      background-color 120ms ease-out,
+      border-color 120ms ease-out,
+      filter 120ms ease-out;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    height: 26px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--panel);
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn:not(.btn-primary):not(.btn-danger) {
+    box-shadow: var(--shadow-1);
+  }
+  .btn:hover:not(:disabled) {
+    background: var(--hover);
+  }
+  .btn:disabled {
+    cursor: default;
+    color: var(--ink-2);
+  }
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+  }
+  /* Beats `.btn:disabled` (same specificity, later): a faded fill, never grey ink on the accent. */
+  .btn-primary:disabled {
+    color: var(--on-accent);
+    opacity: 0.5;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--accent);
+    filter: brightness(1.08);
+  }
+  /* For the one click that destroys work; dark ink holds on the red as it does on the accent. */
+  .btn-danger {
+    background: var(--bad);
+    border-color: var(--bad);
+    color: var(--on-accent);
+  }
+  .btn-danger:disabled {
+    color: var(--on-accent);
+    opacity: 0.45;
+  }
+  .btn-danger:hover:not(:disabled) {
+    background: var(--bad);
+    filter: brightness(1.08);
+  }
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    height: 24px;
+    padding: 0 6px;
+    border-radius: 5px;
+    color: var(--ink-2);
+    text-decoration: none;
+  }
+  .btn-ghost:hover {
+    background: var(--hover);
+    color: var(--ink);
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 6px;
+    color: var(--ink-2);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .nav-item:hover:not([aria-disabled]) {
+    background: var(--hover);
+    color: var(--ink);
+  }
+  .nav-item[aria-current="page"],
+  .nav-item[aria-pressed="true"] {
+    background: var(--selected);
+    color: var(--ink);
+  }
+  .nav-item > svg {
+    flex-shrink: 0;
+    margin-right: 8px;
+    opacity: 0.8;
+  }
+  .nav-item[aria-current="page"] > svg {
+    color: var(--accent);
+    opacity: 1;
+  }
+  /* The app's mark, «Órbita»: a ring with three dots on the brand gradient, lit from above, with
+     a glow in the accent (the active Mesa's block). The favicon draws the same mark. */
+  .brand-mark {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    color: #fff;
+    background:
+      radial-gradient(120% 90% at 20% 0%, oklch(0.8 0.12 285) 0%, transparent 55%),
+      linear-gradient(145deg, oklch(0.68 0.17 282), oklch(0.58 0.2 330));
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 0.3),
+      inset 0 -1px 0 oklch(0 0 0 / 0.22),
+      0 1px 2px oklch(0 0 0 / 0.45),
+      0 0 0 1px oklch(0 0 0 / 0.25),
+      0 0 14px color-mix(in oklab, var(--accent) 45%, transparent);
+  }
+  /* A harness at a glance: its colour as a square dot, or a tinted chip with its name. */
+  .harness-dot,
+  .harness-chip,
+  .harness-logo {
+    --h: var(--h-shell);
+  }
+  [data-harness="shell"] {
+    --h: var(--h-shell);
+  }
+  [data-harness="claude"] {
+    --h: var(--h-claude);
+  }
+  [data-harness="codex"] {
+    --h: var(--h-codex);
+  }
+  [data-harness="grok"] {
+    --h: var(--h-grok);
+  }
+  [data-harness="env"] {
+    --h: var(--h-env);
+  }
+  [data-harness="git"] {
+    --h: var(--h-git);
+  }
+  [data-harness="code"] {
+    --h: var(--h-code);
+  }
+  [data-harness="rec"] {
+    --h: var(--h-rec);
+  }
+  [data-block] {
+    --blk: var(--blk-slate);
+  }
+  [data-block="blue"] {
+    --blk: var(--blk-blue);
+  }
+  [data-block="green"] {
+    --blk: var(--blk-green);
+  }
+  [data-block="amber"] {
+    --blk: var(--blk-amber);
+  }
+  [data-block="rose"] {
+    --blk: var(--blk-rose);
+  }
+  [data-block="violet"] {
+    --blk: var(--blk-violet);
+  }
+  [data-project-color="orange"] {
+    --prj: var(--prj-orange);
+  }
+  [data-project-color="violet"] {
+    --prj: var(--prj-violet);
+  }
+  [data-project-color="teal"] {
+    --prj: var(--prj-teal);
+  }
+  [data-project-color="blue"] {
+    --prj: var(--prj-blue);
+  }
+  [data-project-color="green"] {
+    --prj: var(--prj-green);
+  }
+  [data-project-color="rose"] {
+    --prj: var(--prj-rose);
+  }
+  [data-project-color="amber"] {
+    --prj: var(--prj-amber);
+  }
+  [data-project-color="slate"] {
+    --prj: var(--prj-slate);
+  }
+  /* A project's name in its colour (features/projects/project-tag.tsx). */
+  .project-tag {
+    color: var(--prj);
+    background: color-mix(in oklab, var(--prj) 16%, transparent);
+  }
+  /* A harness's mark (features/terminals/logos.tsx) in its colour. */
+  .harness-logo {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    color: var(--h);
+  }
+  .harness-dot {
+    width: 8px;
+    height: 8px;
+    flex-shrink: 0;
+    border-radius: 2px;
+    background: var(--h);
+  }
+  .harness-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 20px;
+    max-width: 100%;
+    min-width: 0;
+    padding: 0 7px 0 6px;
+    border-radius: 6px;
+    background: color-mix(in oklch, var(--h) 16%, transparent);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .harness-chip::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    flex-shrink: 0;
+    border-radius: 2px;
+    background: var(--h);
+  }
+  /* A Mesa tile: raised, a band along the top, a thin ring while it has focus (the drop
+     target's ring is thicker). A terminal's band is its phase (`--phase`, panel.tsx), so
+     what each one does reads across the Mesa; a git or job tile keeps its own colour. The
+     frame takes a third of the harness's colour, like its header (window.tsx headerFill). */
+  .tile {
+    border: 1px solid color-mix(in oklab, var(--h, var(--line)) 35%, var(--line));
+    border-top: 3px solid var(--phase, var(--h, var(--line)));
+    border-radius: 10px;
+    box-shadow: var(--shadow-2);
+  }
+  .tile:focus-within {
+    border-color: var(--accent);
+    border-top-color: var(--phase, var(--h, var(--accent)));
+    box-shadow:
+      0 0 0 1px var(--accent),
+      var(--shadow-2);
+  }
+  /* The number of a Mesa tile: what "Llevar a…" lists and what a drop targets. */
+  .tile-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 5px;
+    background: var(--selected);
+    color: var(--ink);
+    font-size: 11px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .drag-grip {
+    width: 6px;
+    height: 14px;
+    flex-shrink: 0;
+    background-image: radial-gradient(var(--ink-2) 1px, transparent 1.2px);
+    background-size: 3px 4px;
+    opacity: 0.6;
+  }
+  /* The ⌘K palette: a modal near the top, one dense list, the active row as the selection. */
+  .palette {
+    margin: 12vh auto auto;
+    width: min(640px, calc(100vw - 32px));
+    max-height: min(560px, 76vh);
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--panel);
+    color: var(--ink);
+    box-shadow: var(--shadow-2);
+    overflow: hidden;
+  }
+  .palette[open] {
+    display: flex;
+    flex-direction: column;
+  }
+  .palette::backdrop {
+    background: oklch(0.2 0.02 270 / 0.35);
+  }
+  /* A list a combobox points into: the palette, the folder picker (web/listbox.ts). */
+  .option-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 4px;
+  }
+  .option-head {
+    padding: 8px 8px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-2);
+  }
+  .option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 34px;
+    padding: 0 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .option[aria-selected="true"] {
+    background: var(--selected);
+  }
+  .option[aria-disabled="true"] {
+    color: var(--ink-2);
+    cursor: default;
+  }
+  .section-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-2);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  /* Jira description */
+  .adf {
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+  }
+  .adf p {
+    margin: 0.4em 0;
+  }
+  .adf :is(h2, h3, h4, h5, h6) {
+    margin: 1.2em 0 0.4em;
+    font-weight: 600;
+  }
+  .adf h2 {
+    font-size: 16px;
+  }
+  .adf :is(h3, h4, h5, h6) {
+    font-size: 14px;
+  }
+  .adf :is(ul, ol) {
+    margin: 0.3em 0;
+    padding-left: 1.4em;
+  }
+  .adf ul {
+    list-style: disc;
+  }
+  .adf ol {
+    list-style: decimal;
+  }
+  .adf ul.adf-tasks {
+    list-style: none;
+    padding-left: 0;
+  }
+  .adf-tasks li {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+  }
+  .adf-tasks input {
+    accent-color: var(--accent);
+    translate: 0 1px;
+  }
+  .adf blockquote {
+    margin: 0.5em 0;
+    padding-left: 12px;
+    border-left: 3px solid var(--line);
+    color: var(--ink-2);
+  }
+  .adf hr {
+    margin: 1em 0;
+    border: 0;
+    border-top: 1px solid var(--line);
+  }
+  .adf table {
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .adf :is(th, td) {
+    border: 1px solid var(--line);
+    padding: 4px 8px;
+    text-align: left;
+    vertical-align: top;
+  }
+  .adf th {
+    background: var(--hover);
+    font-weight: 600;
+  }
+  .adf-code {
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: var(--hover);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+  .adf-pre {
+    margin: 0.5em 0;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--hover);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    overflow-x: auto;
+  }
+  .adf-link {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .adf-chip {
+    display: inline-flex;
+    padding: 0 5px;
+    border-radius: 4px;
+    background: var(--selected);
+    font-size: 11px;
+    font-weight: 600;
+  }
+}
